@@ -1,0 +1,170 @@
+clc; 
+kus1=readtable('Data 1_Kusmunda Old V1.xlsx');
+[r, c]=size(kus1);
+kus1
+kus1.EnhancedDeformation
+dispdiff=diff(kus1.EnhancedDeformation);
+N=datenum(kus1.Time);
+timediff1=diff(N)*24*60;
+vec=[];
+for rng=1:r
+    vec(rng)=rng;
+end
+timecorr=vec' %transpose of raw matrix
+timediff=diff(vec')
+newdatatab=table(timediff, dispdiff);
+newdatatab
+
+filttabdata=newdatatab(newdatatab.dispdiff>=0,:)
+v=zeros(length(timediff),1);
+for i=1:length(timediff)
+    v(i)=(dispdiff(i)/timediff(i));
+end
+size(v)
+veltbl=table(timediff, v);
+veltblpos=veltbl(veltbl.v>=0,:);
+[rn, cn]=size(veltblpos);
+timecorrval=(timecorr((2:rn+1),:));
+figure
+plot(timecorrval,veltblpos.v)
+velocity=veltblpos.v;
+fnltbl=table(timecorrval,velocity)
+
+
+
+fnltbl
+[row,col]=size(fnltbl);
+row,col
+%condition 0
+co=fnltbl.velocity;
+for i=1:row
+    if co(i)>0
+        cco=true;
+        chkrow=i; %for checking if code is running or not;
+    else
+        cco=false;
+    end
+end
+chkrow
+if chkrow==row
+    fprintf('proceed to condition 1');
+    % condition 1
+    ci=diff(fnltbl.velocity);
+    lnth_ci=length(ci);
+    condi=false;
+    for j=1:lnth_ci-3
+        cnt=0;
+        for indi=j:j+3            
+            if ci(indi)>0
+               cnt=cnt+1;
+               ci(indi)
+            else
+                cnt=cnt+0;
+            end
+        
+            if cnt>=3
+               condi=true;
+            else
+               condi=false;
+            end
+        end
+        if condi==true
+           fprintf('condition 1 is satisfied for j=indi-3= %d\n',indi-3);
+           a_diff_tbl_cnt=0;
+           t_c=indi-3+9
+           indpplt=[]          
+           for b=1:5
+               %figure
+               %hold on 
+               x=fnltbl.timecorrval(indi-4+b:t_c-1+b,:);
+               y=fnltbl.velocity(indi-4+b:t_c-1+b,:);
+               pplt=polyfit(x, y, 2);
+               %x1=fnltbl.timecorrval(t_c:t_c,:);
+               %y1=fnltbl.velocity(t_c-10:t_c,:);
+               %pplt1=polyfit(x1, y1, 2);
+               %hold off
+               for indplt=1
+                   indpplt(b,:)=pplt(1,1);
+               end               
+           end
+           t_c-1
+           indi-4
+           a_tbl=table(indpplt)
+           a_chk_cnt=0;
+           for a_chk=1:4
+               if a_tbl.indpplt(a_chk)>0
+                  a_chk_cnt=a_chk_cnt+1;
+               else
+                  a_chk_cnt=a_chk_cnt+0;
+               end               
+           end           
+           if a_chk_cnt>=3
+              fprintf('criteria 2 satisfied. Proceeding to criteria 3');
+              a_diff_tbl_data=diff(a_tbl.indpplt);
+              a_diff_tbl=table(a_diff_tbl_data)
+              a_diff_tbl_cnt=0;
+              for a_diff_cond=1:4
+                  if a_diff_tbl.a_diff_tbl_data(a_diff_cond)>0
+                     a_diff_tbl_cnt=a_diff_tbl_cnt+1;
+                  else
+                      a_diff_tbl_cnt=a_diff_tbl_cnt+0;
+                  end                  
+              end
+              if a_diff_tbl_cnt>=3
+                 fprintf('Acceleration phase reached at velocity index %d and deformation index %d\n',t_c-9,t_c-9+1);
+                 fprintf('So the time is ');
+                 tm=t_c-9+1;
+                 kus1.Time(tm)
+                 break;
+              else
+                  fprintf('condition 3 is not satisfied \n');
+              end
+           else
+               fprintf('criteria 2 is not satisfied properly \n');
+           end           
+        else
+            fprintf('condition 1 is not satisfied for j=indi-3= %d\n', indi-3);
+        end        
+    end
+else
+    fprintf('condition 1 not satisfied\n');
+end
+
+for b=1:4
+    figure
+    hold on 
+    x=fnltbl.timecorrval(t_c-9+b:t_c+b,:);
+    y=fnltbl.velocity(t_c+b-9:t_c+b,:);
+    pplt=polyfit(x, y, 2);
+    f=polyval(pplt,x);
+    plot(x,y,'o',x,f,'-')
+    hold off
+end
+figure
+for b=1:4
+    %figure
+    hold on 
+    x=fnltbl.timecorrval(t_c-10+b:t_c+b-1,:);
+    y=fnltbl.velocity(t_c+b-10:t_c+b-1,:);
+    pplt=polyfit(x, y, 2);
+    f1=polyval(pplt,x);
+    plot(x,y)
+    hold off
+end
+figure
+for b=1:1
+    %figure
+    hold on 
+    x=fnltbl.timecorrval(t_c-10+b:t_c+b-1+4,:);
+    y=fnltbl.velocity(t_c+b-10:t_c+b-1+4,:);
+    pplt=polyfit(x, y, 2);
+    f1=polyval(pplt,x);
+    plot(x,y,'o',x,f1,'-')
+    hold off
+end
+
+for b=1:4 
+    x=fnltbl.timecorrval(t_c-10+b:t_c+b-1,:);
+    y=fnltbl.velocity(t_c-10+b:t_c+b-1,:);
+    pplt_fit=polyfit(x, y, 2)
+end
